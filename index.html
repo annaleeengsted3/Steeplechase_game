@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>The Grand National: Steeplechase</title>
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="img/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="img/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="img/favicon-16x16.png"
+    />
+    <style>
+      :root {
+        /* --horsecolor: #974f26; */
+        --horsecolor: #8f471a;
+        --ridercolor: #feb700;
+        --basecolor: #dc5f12;
+      }
+      #game {
+        position: relative;
+        width: 80vw;
+        height: 45vw;
+        background-image: url("game_img/bg_test.svg");
+        background-size: cover;
+        align-self: center;
+        justify-self: center;
+        overflow: hidden;
+        /* border: 10px solid var(--basecolor); */
+        border: 5px solid var(--basecolor);
+        box-sizing: border-box;
+      }
+      .fade_in {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        display: grid;
+        background-image: url("img/test2.jpg");
+        background-repeat: no-repeat;
+        background-size: contain;
+        background-color: black;
+        opacity: 0;
+        transition: opacity 2.5s ease;
+      }
+      body {
+        margin: 0;
+        background-color: black;
+      }
+
+      #horse {
+        position: absolute;
+        left: 10vw;
+        top: 15vw;
+        width: 28vw;
+        height: 28vw;
+        /* display: grid; */
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr;
+        z-index: 10;
+        display: none;
+      }
+      /* .horse_sprite {
+        width: 100%;
+        height: 100%;
+        background-image: url("game_img/running.svg");
+        background-size: 600% 100%;
+        animation: horse_kf 0.45s steps(6) infinite;
+      } */
+      .horse_sprite {
+        position: relative;
+        overflow: hidden;
+        width: 28vw;
+        height: 28vw;
+      }
+      .strip {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: calc(28vw * 6);
+        height: 100%;
+      }
+
+      .strip svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 28vw;
+        width: 100%;
+        will-change: transform;
+        transform-origin: 0 0;
+        animation: a 0.45s steps(6, end) infinite;
+      }
+
+      @keyframes a {
+        to {
+          transform: translateX(-100%);
+        }
+      }
+
+      .horse_jumping {
+        /* background-image: url("game_img/jumping.svg");
+        background-size: cover; */
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        justify-self: center;
+      }
+      .horse_dead {
+        /* background-image: url("game_img/dead.svg");
+        background-size: cover; */
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        justify-self: center;
+        z-index: 10;
+      }
+
+      .horse_sprite,
+      .horse_jumping,
+      .horse_hitbox,
+      .horse_dead {
+        grid-column: 1 / 2;
+        grid-row: 1 / 2;
+      }
+
+      .horse_hitbox {
+        position: absolute;
+        width: 40%;
+        height: 40%;
+        border-radius: 50%;
+        align-self: center;
+        justify-self: center;
+        margin-left: 10%;
+        margin-bottom: 20%;
+      }
+
+      @keyframes horse_kf {
+        0% {
+          background-position: 0% 0%;
+        }
+
+        100% {
+          background-position: -600% 0%;
+        }
+      }
+
+      .fence {
+        position: absolute;
+        background-image: url("game_img/fence1.svg");
+        background-size: cover;
+        width: 18vw;
+        height: 18vw;
+        left: 90vw;
+        top: 26vw;
+        z-index: 0;
+        animation: fence_kf var(--speed) linear 1;
+      }
+
+      .altfence {
+        background-image: url("game_img/fence2.svg");
+      }
+
+      @keyframes fence_kf {
+        0% {
+          transform: translateX(0vw);
+        }
+        100% {
+          transform: translateX(-105vw);
+        }
+      }
+
+      .collision {
+        transform: rotate(180deg);
+      }
+
+      .jump {
+        animation: jump_kf 1.7s ease;
+      }
+
+      @keyframes jump_kf {
+        0% {
+          transform: translateY(0%);
+        }
+        50% {
+          transform: translateY(-50%);
+        }
+        100% {
+          transform: translateY(0%);
+        }
+      }
+      .bushes {
+        position: absolute;
+        top: 6vw;
+        background: url("game_img/bg_bushes_test.svg") repeat-x;
+        width: 240vw;
+        /* her beregner jeg den præcise højde med decimaler ud fra størrelsesforholdet i den oprindelige svg som er 3840/182: */
+        height: calc(((240 * 182) / 5760) * 1vw);
+      }
+
+      .middle {
+        position: absolute;
+        top: 7.5vw;
+        background: url("game_img/midlayer.svg") repeat-x;
+        width: 240vw;
+        /* her beregner jeg den præcise højde med decimaler ud fra størrelsesforholdet i den oprindelige svg som er 5760/380: */
+        height: calc(((240 * 380) / 5760) * 1vw);
+      }
+
+      .white_fence {
+        position: absolute;
+        top: 20vw;
+        background: url("game_img/white_fence.svg") repeat-x;
+        width: 240vw;
+        /* her beregner jeg den præcise højde med decimaler ud fra størrelsesforholdet i den oprindelige svg som er 5760/158: */
+        height: calc(((240 * 158) / 5760) * 1vw);
+        /* height: 6.6vw; */
+      }
+
+      @keyframes parallax {
+        from {
+          transform: translateX(0vw);
+        }
+        to {
+          transform: translateX(-160vw);
+        }
+      }
+
+      #popup {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        background-image: url("game_img/movement2.jpg");
+        background-size: cover;
+      }
+
+      .start_horse {
+        width: 52vw;
+        height: 26vw;
+        position: absolute;
+        right: 31vw;
+        bottom: 1vw;
+      }
+      .start_horse #horse_frontpage {
+        transform-origin: bottom center;
+        animation: horse_rotate 4s ease-out 1 forwards;
+      }
+      @keyframes horse_rotate {
+        0% {
+          transform: translate(0vw, 0vw);
+        }
+        100% {
+          transform: translate(-6vw, 0vw) rotate(-20deg);
+        }
+      }
+      .game_info {
+        position: absolute;
+        text-align: right;
+        width: 38vw;
+        height: 25vw;
+        top: 11vw;
+        right: 6vw;
+        font-family: sans-serif;
+        color: white;
+        font-weight: 600;
+        font-size: 2vw;
+      }
+      .instruc {
+        margin-left: 15vw;
+        font-size: 1.3vw;
+      }
+      .arrow,
+      .spacebar,
+      #start {
+        position: absolute;
+      }
+      .arrow {
+        background-image: url("game_img/arrow.svg");
+        background-size: cover;
+        width: 2vw;
+        height: 2vw;
+        top: 26vw;
+        right: 10.5vw;
+        animation: press 1.5s infinite ease;
+      }
+      @keyframes press {
+        0% {
+          transform: translateY(0vw);
+        }
+        50% {
+          transform: translateY(1vw);
+        }
+        100% {
+          transform: translateY(0vw);
+        }
+      }
+      .spacebar {
+        background-image: url("game_img/spacebutton.svg");
+        background-size: cover;
+        width: 14.5vw;
+        height: 2.5vw;
+        top: 28vw;
+        right: 5vw;
+        animation: shrink 1.5s infinite ease;
+      }
+      @keyframes shrink {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(0.9);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      button {
+        background-image: linear-gradient(
+          rgba(220, 95, 17, 1),
+          rgba(174, 74, 12, 1)
+        );
+        padding: 1vw 3vw;
+        border: 2px solid white;
+        border-radius: 4px;
+        font-family: sans-serif;
+        color: white;
+        font-weight: 700;
+        letter-spacing: 2px;
+        font-size: 1.2vw;
+        box-shadow: 10px 9px 5px -6px rgba(0, 0, 0, 0.61);
+      }
+
+      #start {
+        top: 34vw;
+        right: 5vw;
+        transition: transform 1s ease;
+        cursor: pointer;
+      }
+      #start:hover {
+        transform: scale(1.2);
+      }
+      .ui {
+        position: absolute;
+        width: 24vw;
+        height: 8vw;
+        right: 0;
+      }
+      #time {
+        position: absolute;
+        right: 8vw;
+        top: -1.5vw;
+        color: white;
+        font-family: sans-serif;
+        font-weight: 700;
+        font-size: 3vw;
+      }
+      .title {
+        position: absolute;
+        background-image: url("game_img/title.svg");
+        background-size: cover;
+        width: 50vw;
+        height: 8vw;
+        top: 3vw;
+        right: 0vw;
+      }
+
+      #gameover {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 9vw;
+        display: none;
+      }
+      .gameover_content {
+        box-sizing: border-box;
+        background: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0),
+          rgb(97, 97, 97)
+        );
+        width: 50%;
+        height: 40%;
+        position: absolute;
+        z-index: 20;
+        left: 34vw;
+        box-shadow: 10px 9px 5px -6px rgba(0, 0, 0, 0.61);
+        animation: shake 0.8s;
+        animation-iteration-count: 3;
+      }
+      .gameover_title {
+        background-image: url("game_img/gameover.svg");
+        background-size: cover;
+        width: 100%;
+        height: 28%;
+      }
+      .gameover_content a {
+        color: white;
+        font-family: sans-serif;
+        font-size: 1.5vw;
+        margin-left: 0.5vw;
+      }
+      @keyframes shake {
+        0% {
+          transform: translate(1px, 1px) rotate(0deg);
+        }
+        10% {
+          transform: translate(-1px, -2px) rotate(-1deg);
+        }
+        20% {
+          transform: translate(-3px, 0px) rotate(1deg);
+        }
+        30% {
+          transform: translate(3px, 2px) rotate(0deg);
+        }
+        40% {
+          transform: translate(1px, -1px) rotate(1deg);
+        }
+        50% {
+          transform: translate(-1px, 2px) rotate(-1deg);
+        }
+        60% {
+          transform: translate(-3px, 1px) rotate(0deg);
+        }
+        70% {
+          transform: translate(3px, 1px) rotate(-1deg);
+        }
+        80% {
+          transform: translate(-1px, -1px) rotate(1deg);
+        }
+        90% {
+          transform: translate(1px, 2px) rotate(0deg);
+        }
+        100% {
+          transform: translate(1px, -2px) rotate(-1deg);
+        }
+      }
+
+      #gameover p {
+        font-family: sans-serif;
+        color: white;
+        font-weight: 700;
+        font-size: 3vw;
+        margin-left: 2vw;
+        margin-bottom: 1vw;
+      }
+      .gameover_time {
+        font-family: sans-serif;
+        color: white;
+        font-weight: 700;
+        font-size: 3vw;
+        margin-left: 4vw;
+        text-decoration: underline;
+      }
+      #replay {
+        margin-left: 55%;
+        margin-top: 10%;
+        z-index: 10;
+        font-size: 2vw;
+        padding: 0.5vw 1vw;
+        cursor: pointer;
+        animation: pulse 2s infinite alternate ease;
+      }
+      @keyframes pulse {
+        from {
+          transform: scale(1);
+        }
+        to {
+          transform: scale(1.1);
+        }
+      }
+      .feedback {
+        display: none;
+        animation: scale 0.5s infinite alternate ease;
+        position: absolute;
+        font-family: sans-serif;
+        color: #fdb804;
+        font-weight: 700;
+        font-size: 1.8rem;
+        right: 8vw;
+        bottom: 5vw;
+        text-shadow: 2px 2px 1px #000;
+        z-index: 10;
+      }
+
+      @keyframes scale {
+        to {
+          transform: scale(1.2);
+        }
+      }
+
+      .selections {
+        position: absolute;
+        background-color: rgba(255, 255, 255, 0.89);
+        width: 40%;
+        height: 59%;
+        right: 3vw;
+        top: 11vw;
+        display: grid;
+        justify-items: center;
+        align-items: center;
+        font-family: sans-serif;
+        color: white;
+        font-size: 1.3rem;
+        font-weight: 700;
+        box-shadow: 10px 7px 5px -4px rgba(0, 0, 0, 0.75);
+      }
+      .selections p {
+        background-color: var(--basecolor);
+        width: 100%;
+        height: 100%;
+        text-align: center;
+        margin: auto;
+        display: grid;
+        align-items: center;
+      }
+      .swatches {
+        display: flex;
+      }
+      .selections button:hover {
+        transform: scale(1.1);
+      }
+      .swatches > div {
+        width: 2.5vw;
+        height: 2.5vw;
+        border-radius: 25% 10%;
+        box-shadow: 10px 7px 5px -4px rgba(0, 0, 0, 0.75);
+        /* border: 2px solid black; */
+      }
+      .swatches > div:hover {
+        transform: scale(1.03);
+      }
+      .brown {
+        background-color: #974f26;
+        /* fill: #974f26; */
+      }
+      .grey {
+        background-color: #5a5a5a;
+      }
+      .black {
+        background-color: #141414;
+      }
+      .palomino {
+        background-color: #d19155;
+      }
+      .yellow {
+        background-color: #feb700;
+      }
+      .orange {
+        background-color: #49c49b;
+      }
+      .blue {
+        background-color: #9c37b3;
+      }
+      .green {
+        background-color: rgb(150, 0, 0);
+      }
+
+      /* MEDIA QUERIES */
+      @media only screen and (max-width: 850px) {
+        .gameover_content a {
+          font-size: 2vw;
+          margin-left: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="fade_in">
+      <section id="game">
+        <div class="bushes"></div>
+        <div class="middle"></div>
+        <div class="white_fence"></div>
+
+        <div id="horse">
+          <div class="horse_sprite">
+            <div class="strip"></div>
+          </div>
+          <div class="horse_jumping"></div>
+          <div class="horse_dead"></div>
+          <div class="horse_hitbox"></div>
+        </div>
+        <div class="feedback"></div>
+        <div class="ui">
+          <div class="uiplace"></div>
+          <h5 id="time"><span id="time_holder">00:00</span>s</h5>
+        </div>
+
+        <article id="gameover">
+          <section class="gameover_content">
+            <div class="gameover_title"></div>
+            <p>Din tid: <span class="gameover_time">test</span> s</p>
+            <button id="replay" data-action="replay">Spil igen?</button>
+          </section>
+        </article>
+        <article class="selections">
+          <p>Vælg hestens farve:</p>
+          <div class="swatches">
+            <div class="horseswatch brown"></div>
+            <div class="horseswatch grey"></div>
+            <div class="horseswatch black"></div>
+            <div class="horseswatch palomino"></div>
+          </div>
+          <p>Vælg rytterens tøj:</p>
+          <div class="swatches">
+            <div class="riderswatch yellow"></div>
+            <div class="riderswatch orange"></div>
+            <div class="riderswatch blue"></div>
+            <div class="riderswatch green"></div>
+          </div>
+          <button data-action="start">Start!</button>
+        </article>
+        <section id="popup">
+          <div class="start_horse"></div>
+          <div class="title"></div>
+          <article class="game_info">
+            <p>
+              Se hvor længe du kan være med i det verdenskendte steeplechase
+              <br />
+              The Grand National!
+            </p>
+            <p class="instruc">
+              Brug mellemrumstasten til at springe over forhindringer:
+            </p>
+          </article>
+          <div class="spacebar"></div>
+          <div class="arrow"></div>
+          <button id="start" data-action="selectOps">SPIL!</button>
+        </section>
+      </section>
+    </div>
+    <audio id="gallop" src="game_audio/gallop.mp3"></audio>
+    <audio id="jump" src="game_audio/jump.wav"></audio>
+    <audio id="gameover_audio" src="game_audio/gameover.wav"></audio>
+    <audio id="gameover_audio2" src="game_audio/thump2.wav"></audio>
+    <audio id="cheer" src="game_audio/cheer.wav"></audio>
+    <script src="steeplechase_game.js"></script>
+  </body>
+</html>
